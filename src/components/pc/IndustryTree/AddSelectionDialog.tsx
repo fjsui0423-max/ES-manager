@@ -70,7 +70,7 @@ export function AddSelectionDialog({ open, onOpenChange, companyId }: AddSelecti
               type="text"
               value={label}
               onChange={(e) => setLabel(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+              onKeyDown={(e) => { if (e.nativeEvent.isComposing) return; if (e.key === 'Enter') handleSubmit() }}
               placeholder="例: 25卒 本選考"
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
               autoFocus

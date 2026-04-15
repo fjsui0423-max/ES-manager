@@ -172,14 +172,13 @@ export const createEditorSlice: StateCreator<AppStore, [], [], EditorSlice> = (s
   },
 
   addQuestion: (body, charLimit) => {
-    const { questions, userId } = get()
-    const selectionId = questions[0]?.selection_id
-    if (!selectionId || !userId) return
+    const { activeSelectionId, questions, userId } = get()
+    if (!activeSelectionId || !userId) return
     const tmpId = `tmp-${Date.now()}`
     const newQuestion: Question = {
       id: tmpId,
       user_id: userId,
-      selection_id: selectionId,
+      selection_id: activeSelectionId,
       body,
       char_limit: charLimit,
       sort_order: questions.length,
@@ -189,7 +188,7 @@ export const createEditorSlice: StateCreator<AppStore, [], [], EditorSlice> = (s
     ;(async () => {
       const { data, error } = await supabase
         .from('questions')
-        .insert({ user_id: userId, selection_id: selectionId, body, char_limit: charLimit ?? null, sort_order: questions.length })
+        .insert({ user_id: userId, selection_id: activeSelectionId, body, char_limit: charLimit ?? null, sort_order: questions.length })
         .select()
         .single()
       if (error) {

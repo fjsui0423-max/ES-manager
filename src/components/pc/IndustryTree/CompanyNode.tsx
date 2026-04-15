@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { useStore } from '@/store'
 import { useShallow } from 'zustand/react/shallow'
 import type { Company } from '@/types/app'
+import { TYPE_LABELS } from '@/types/app'
 import { SelectionNode } from './SelectionNode'
 import { AddSelectionDialog } from './AddSelectionDialog'
 
@@ -71,11 +72,27 @@ export function CompanyNode({ company }: CompanyNodeProps) {
             >
               + 選考を追加
             </button>
-          ) : (
-            selections.map((selection) => (
-              <SelectionNode key={selection.id} selection={selection} />
+          ) : (() => {
+            const TYPE_ORDER = ['main', 'internship', 'other'] as const
+            const grouped = TYPE_ORDER
+              .map((type) => ({ type, items: selections.filter((s) => s.type === type) }))
+              .filter((g) => g.items.length > 0)
+            const showHeaders = grouped.length > 1
+            return grouped.map(({ type, items }) => (
+              <div key={type}>
+                {showHeaders && (
+                  <div className="px-3 pt-2 pb-0.5">
+                    <span className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
+                      {TYPE_LABELS[type]}
+                    </span>
+                  </div>
+                )}
+                {items.map((selection) => (
+                  <SelectionNode key={selection.id} selection={selection} />
+                ))}
+              </div>
             ))
-          )}
+          })()}
         </div>
       )}
 

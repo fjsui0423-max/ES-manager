@@ -39,7 +39,7 @@ export function AddItemDialog({ open, onOpenChange, title, placeholder, onSubmit
           type="text"
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+          onKeyDown={(e) => { if (e.nativeEvent.isComposing) return; if (e.key === 'Enter') handleSubmit() }}
           placeholder={placeholder}
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
           autoFocus
