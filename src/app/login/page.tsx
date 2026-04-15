@@ -140,21 +140,30 @@ export default function LoginPage() {
   const passwordsMatch = confirmPassword === '' || password === confirmPassword
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center px-4 bg-[oklch(0.977_0.008_254)]">
+    <div className="relative min-h-screen flex flex-col bg-[oklch(0.977_0.008_254)]">
       {/* Mesh gradient */}
       <div className="absolute inset-0 z-0" style={meshStyle} />
 
-      <div className="relative z-10 w-full max-w-sm">
-        {/* ロゴ */}
-        <div className="flex justify-center mb-8">
-          <Image
-            src="/ES-manager-logo.png"
-            alt="ES Manager"
-            width={72}
-            height={72}
-            className="rounded-2xl shadow-xl shadow-primary/25"
-          />
+      {/* サイトヘッダー */}
+      <header className="relative z-10 flex items-center gap-4 px-8 py-5 bg-white/30 backdrop-blur-md border-b border-white/40">
+        <Image
+          src="/ES-manager-logo.png"
+          alt="ES Manager"
+          width={48}
+          height={48}
+          className="rounded-2xl shadow-lg shadow-primary/20"
+        />
+        <div className="flex flex-col leading-tight">
+          <span className="text-xl font-black tracking-tight text-foreground">ES Manager</span>
+          <span className="text-[11px] font-medium tracking-widest text-primary uppercase opacity-80">
+            Entry Sheet Manager
+          </span>
         </div>
+      </header>
+
+      {/* フォームエリア */}
+      <div className="relative z-10 flex-1 flex items-center justify-center px-4 py-10">
+      <div className="w-full max-w-sm">
 
         {/* カード */}
         <div className="bg-white/70 dark:bg-black/40 backdrop-blur-xl border border-white/40 dark:border-white/10 shadow-2xl shadow-blue-200/40 dark:shadow-black/50 rounded-3xl p-8">
@@ -316,6 +325,7 @@ export default function LoginPage() {
             </button>
           </form>
         </div>
+      </div>
       </div>
     </div>
   )
