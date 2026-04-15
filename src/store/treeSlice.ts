@@ -1,10 +1,7 @@
 import type { StateCreator } from 'zustand'
+import type { AppStore } from './index'
 import type { Industry, Company, Selection, SelectionStatus } from '@/types/app'
-import {
-  MOCK_INDUSTRIES,
-  MOCK_COMPANIES,
-  MOCK_SELECTIONS,
-} from '@/lib/mockData'
+import { supabase } from '@/lib/supabase'
 
 export interface TreeSlice {
   industries: Industry[]
@@ -29,10 +26,10 @@ export interface TreeSlice {
   deleteSelection: (id: string) => void
 }
 
-export const createTreeSlice: StateCreator<TreeSlice, [], [], TreeSlice> = (set) => ({
-  industries: MOCK_INDUSTRIES,
-  companies: MOCK_COMPANIES,
-  selections: MOCK_SELECTIONS,
+export const createTreeSlice: StateCreator<AppStore, [], [], TreeSlice> = (set, get) => ({
+  industries: [],
+  companies: [],
+  selections: [],
 
   activeIndustryId: null,
   activeCompanyId: null,
@@ -69,119 +66,157 @@ export const createTreeSlice: StateCreator<TreeSlice, [], [], TreeSlice> = (set)
       return { expandedNodes: newExpanded }
     }),
 
-  addIndustry: (name) =>
-    set((state) => ({
-      industries: [
-        ...state.industries,
-        {
-          id: `ind-${Date.now()}`,
-          user_id: 'user-1',
-          name,
-          sort_order: state.industries.length,
-          created_at: new Date().toISOString(),
-        },
-      ],
-    })),
+  addIndustry: (name) => {
+    const { userId, industries } = get()
+    if (!userId) return
+    const tmpId = `tmp-${Date.now()}`
+    const tmp: Industry = {
+      id: tmpId,
+      user_id: userId,
+      name,
+      sort_order: industries.length,
+      created_at: new Date().toISOString(),
+    }
+    set((s) => ({ industries: [...s.industries, tmp] }))
+    ;(async () => {
+      const { data, error } = await supabase
+        .from('industries')
+        .insert({ user_id: userId, name, sort_order: industries.length })
+        .select()
+        .single()
+      if (error) {
+        set((s) => ({ industries: s.industries.filter((i) => i.id !== tmpId) }))
+        return
+      }
+      set((s) => ({ industries: s.industries.map((i) => (i.id === tmpId ? data : i)) }))
+    })()
+  },
 
-  addCompany: (industryId, name) =>
-    set((state) => {
-      const count = state.companies.filter((c) => c.industry_id === industryId).length
-      const newExpanded = new Set(state.expandedNodes)
+  addCompany: (industryId, name) => {
+    const { userId, companies } = get()
+    if (!userId) return
+    const count = companies.filter((c) => c.industry_id === industryId).length
+    const tmpId = `tmp-${Date.now()}`
+    const tmp: Company = {
+      id: tmpId,
+      user_id: userId,
+      industry_id: industryId,
+      name,
+      sort_order: count,
+      created_at: new Date().toISOString(),
+    }
+    set((s) => {
+      const newExpanded = new Set(s.expandedNodes)
       newExpanded.add(industryId)
-      return {
-        companies: [
-          ...state.companies,
-          {
-            id: `co-${Date.now()}`,
-            user_id: 'user-1',
-            industry_id: industryId,
-            name,
-            sort_order: count,
-            created_at: new Date().toISOString(),
-          },
-        ],
-        expandedNodes: newExpanded,
+      return { companies: [...s.companies, tmp], expandedNodes: newExpanded }
+    })
+    ;(async () => {
+      const { data, error } = await supabase
+        .from('companies')
+        .insert({ user_id: userId, industry_id: industryId, name, sort_order: count })
+        .select()
+        .single()
+      if (error) {
+        set((s) => ({ companies: s.companies.filter((c) => c.id !== tmpId) }))
+        return
       }
-    }),
+      set((s) => ({ companies: s.companies.map((c) => (c.id === tmpId ? data : c)) }))
+    })()
+  },
 
-  addSelection: (companyId, label, type, deadline) =>
-    set((state) => {
-      const count = state.selections.filter((s) => s.company_id === companyId).length
-      const newExpanded = new Set(state.expandedNodes)
+  addSelection: (companyId, label, type, deadline) => {
+    const { userId, selections } = get()
+    if (!userId) return
+    const count = selections.filter((s) => s.company_id === companyId).length
+    const tmpId = `tmp-${Date.now()}`
+    const tmp: Selection = {
+      id: tmpId,
+      user_id: userId,
+      company_id: companyId,
+      type,
+      label,
+      status: 'not_started',
+      deadline,
+      sort_order: count,
+      created_at: new Date().toISOString(),
+    }
+    set((s) => {
+      const newExpanded = new Set(s.expandedNodes)
       newExpanded.add(companyId)
-      return {
-        selections: [
-          ...state.selections,
-          {
-            id: `sel-${Date.now()}`,
-            user_id: 'user-1',
-            company_id: companyId,
-            type,
-            label,
-            status: 'not_started',
-            deadline,
-            sort_order: count,
-            created_at: new Date().toISOString(),
-          },
-        ],
-        expandedNodes: newExpanded,
+      return { selections: [...s.selections, tmp], expandedNodes: newExpanded }
+    })
+    ;(async () => {
+      const { data, error } = await supabase
+        .from('selections')
+        .insert({ user_id: userId, company_id: companyId, type, label, status: 'not_started', deadline: deadline ?? null, sort_order: count })
+        .select()
+        .single()
+      if (error) {
+        set((s) => ({ selections: s.selections.filter((sel) => sel.id !== tmpId) }))
+        return
       }
-    }),
+      set((s) => ({ selections: s.selections.map((sel) => (sel.id === tmpId ? data : sel)) }))
+    })()
+  },
 
-  updateSelection: (id, data) =>
-    set((state) => ({
-      selections: state.selections.map((s) =>
-        s.id === id ? { ...s, ...data } : s
-      ),
-    })),
+  updateSelection: (id, data) => {
+    set((s) => ({
+      selections: s.selections.map((sel) => (sel.id === id ? { ...sel, ...data } : sel)),
+    }))
+    ;(async () => {
+      await supabase.from('selections').update(data).eq('id', id)
+    })()
+  },
 
-  updateSelectionStatus: (id, status) =>
-    set((state) => ({
-      selections: state.selections.map((s) =>
-        s.id === id ? { ...s, status } : s
-      ),
-    })),
+  updateSelectionStatus: (id, status) => {
+    set((s) => ({
+      selections: s.selections.map((sel) => (sel.id === id ? { ...sel, status } : sel)),
+    }))
+    ;(async () => {
+      await supabase.from('selections').update({ status }).eq('id', id)
+    })()
+  },
 
-  deleteIndustry: (id) =>
+  deleteIndustry: (id) => {
     set((state) => {
-      const companyIds = state.companies
-        .filter((c) => c.industry_id === id)
-        .map((c) => c.id)
-      const selectionIds = state.selections
-        .filter((s) => companyIds.includes(s.company_id))
-        .map((s) => s.id)
+      const companyIds = state.companies.filter((c) => c.industry_id === id).map((c) => c.id)
+      const selectionIds = state.selections.filter((s) => companyIds.includes(s.company_id)).map((s) => s.id)
       return {
         industries: state.industries.filter((i) => i.id !== id),
         companies: state.companies.filter((c) => c.industry_id !== id),
         selections: state.selections.filter((s) => !selectionIds.includes(s.id)),
         activeIndustryId: state.activeIndustryId === id ? null : state.activeIndustryId,
-        activeCompanyId: companyIds.includes(state.activeCompanyId ?? '')
-          ? null
-          : state.activeCompanyId,
-        activeSelectionId: selectionIds.includes(state.activeSelectionId ?? '')
-          ? null
-          : state.activeSelectionId,
+        activeCompanyId: companyIds.includes(state.activeCompanyId ?? '') ? null : state.activeCompanyId,
+        activeSelectionId: selectionIds.includes(state.activeSelectionId ?? '') ? null : state.activeSelectionId,
       }
-    }),
+    })
+    ;(async () => {
+      await supabase.from('industries').delete().eq('id', id)
+    })()
+  },
 
-  deleteCompany: (id) =>
+  deleteCompany: (id) => {
     set((state) => {
-      const selectionIds = state.selections
-        .filter((s) => s.company_id === id)
-        .map((s) => s.id)
+      const selectionIds = state.selections.filter((s) => s.company_id === id).map((s) => s.id)
       return {
         companies: state.companies.filter((c) => c.id !== id),
         selections: state.selections.filter((s) => s.company_id !== id),
         activeCompanyId: state.activeCompanyId === id ? null : state.activeCompanyId,
-        activeSelectionId: selectionIds.includes(state.activeSelectionId ?? '')
-          ? null
-          : state.activeSelectionId,
+        activeSelectionId: selectionIds.includes(state.activeSelectionId ?? '') ? null : state.activeSelectionId,
       }
-    }),
+    })
+    ;(async () => {
+      await supabase.from('companies').delete().eq('id', id)
+    })()
+  },
 
-  deleteSelection: (id) =>
+  deleteSelection: (id) => {
     set((state) => ({
       selections: state.selections.filter((s) => s.id !== id),
       activeSelectionId: state.activeSelectionId === id ? null : state.activeSelectionId,
-    })),
+    }))
+    ;(async () => {
+      await supabase.from('selections').delete().eq('id', id)
+    })()
+  },
 })

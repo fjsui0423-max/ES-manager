@@ -1,8 +1,9 @@
 'use client'
 
 import { useRef, useCallback } from 'react'
-import { PenLine, BookOpen, CalendarDays } from 'lucide-react'
+import { PenLine, BookOpen, CalendarDays, LogOut } from 'lucide-react'
 import { useStore } from '@/store'
+import { supabase } from '@/lib/supabase'
 import { IndustryTree } from './IndustryTree/IndustryTree'
 import { QuestionList } from './QuestionList/QuestionList'
 import { AnswerEditor } from './AnswerEditor/AnswerEditor'
@@ -85,6 +86,16 @@ export function PCLayout() {
             {label}
           </button>
         ))}
+        <div className="ml-auto">
+          <button
+            onClick={() => supabase.auth.signOut()}
+            title="ログアウト"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+            ログアウト
+          </button>
+        </div>
       </div>
 
       {/* メインコンテンツ */}

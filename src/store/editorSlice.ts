@@ -1,7 +1,8 @@
 import type { StateCreator } from 'zustand'
+import type { AppStore } from './index'
 import type { JSONContent } from '@tiptap/react'
 import type { Question, Answer, Template, SelectionType } from '@/types/app'
-import { MOCK_QUESTIONS, MOCK_ANSWERS, MOCK_TEMPLATES } from '@/lib/mockData'
+import { supabase } from '@/lib/supabase'
 
 export interface EditorSlice {
   questions: Question[]
@@ -30,7 +31,7 @@ export interface EditorSlice {
   deleteTemplate: (id: string) => void
 }
 
-export const createEditorSlice: StateCreator<EditorSlice, [], [], EditorSlice> = (set, get) => ({
+export const createEditorSlice: StateCreator<AppStore, [], [], EditorSlice> = (set, get) => ({
   questions: [],
   activeQuestionId: null,
 
@@ -41,24 +42,43 @@ export const createEditorSlice: StateCreator<EditorSlice, [], [], EditorSlice> =
   isDirty: false,
   templateApplySignal: 0,
 
-  templates: [...MOCK_TEMPLATES],
+  templates: [],
 
   setQuestionsForSelection: (selectionId) => {
-    const questions = MOCK_QUESTIONS.filter((q) => q.selection_id === selectionId)
-    set({ questions, activeQuestionId: null, drafts: [], editorContent: null })
+    set({ questions: [], activeQuestionId: null, drafts: [], editorContent: null, isDirty: false })
+    const { userId } = get()
+    if (!userId) return
+    ;(async () => {
+      const { data } = await supabase
+        .from('questions')
+        .select('*')
+        .eq('selection_id', selectionId)
+        .eq('user_id', userId)
+        .order('sort_order')
+      set({ questions: data ?? [] })
+    })()
   },
 
   setActiveQuestion: (id) => {
-    const drafts = MOCK_ANSWERS.filter((a) => a.question_id === id)
-      .sort((a, b) => a.draft_index - b.draft_index)
-    const firstDraft = drafts[0] ?? null
-    set({
-      activeQuestionId: id,
-      drafts,
-      activeDraftIndex: 1,
-      editorContent: firstDraft?.content_json as JSONContent | null,
-      isDirty: false,
-    })
+    set({ activeQuestionId: id, drafts: [], activeDraftIndex: 1, editorContent: null, isDirty: false })
+    const { userId } = get()
+    if (!userId) return
+    ;(async () => {
+      const { data } = await supabase
+        .from('answers')
+        .select('*')
+        .eq('question_id', id)
+        .eq('user_id', userId)
+        .order('draft_index')
+      const drafts: Answer[] = data ?? []
+      const firstDraft = drafts[0] ?? null
+      set({
+        drafts,
+        activeDraftIndex: firstDraft?.draft_index ?? 1,
+        editorContent: (firstDraft?.content_json as JSONContent | null) ?? null,
+        isDirty: false,
+      })
+    })()
   },
 
   setActiveDraftIndex: (index) => {
@@ -76,11 +96,12 @@ export const createEditorSlice: StateCreator<EditorSlice, [], [], EditorSlice> =
   },
 
   markSaved: () => {
-    const { activeQuestionId, activeDraftIndex, editorContent, drafts } = get()
-    if (!activeQuestionId || !editorContent) return
+    const { activeQuestionId, activeDraftIndex, editorContent, drafts, userId } = get()
+    if (!activeQuestionId || !editorContent || !userId) return
 
     const contentText = extractText(editorContent)
     const existingIndex = drafts.findIndex((d) => d.draft_index === activeDraftIndex)
+    const now = new Date().toISOString()
 
     if (existingIndex >= 0) {
       const updated = [...drafts]
@@ -88,39 +109,56 @@ export const createEditorSlice: StateCreator<EditorSlice, [], [], EditorSlice> =
         ...updated[existingIndex],
         content_json: editorContent,
         content_text: contentText,
-        updated_at: new Date().toISOString(),
+        updated_at: now,
       }
       set({ drafts: updated, isDirty: false })
     } else {
       const newDraft: Answer = {
-        id: `ans-${Date.now()}`,
-        user_id: 'user-1',
+        id: `tmp-${Date.now()}`,
+        user_id: userId,
         question_id: activeQuestionId,
         draft_index: activeDraftIndex,
         content_json: editorContent,
         content_text: contentText,
         is_active: false,
-        updated_at: new Date().toISOString(),
-        created_at: new Date().toISOString(),
+        updated_at: now,
+        created_at: now,
       }
       set({ drafts: [...drafts, newDraft], isDirty: false })
     }
+
+    ;(async () => {
+      await supabase.from('answers').upsert(
+        {
+          user_id: userId,
+          question_id: activeQuestionId,
+          draft_index: activeDraftIndex,
+          content_json: editorContent,
+          content_text: contentText,
+          is_active: false,
+          updated_at: now,
+        },
+        { onConflict: 'question_id,draft_index' }
+      )
+    })()
   },
 
   addDraft: () => {
     const { drafts, activeQuestionId } = get()
     if (!activeQuestionId) return
     const nextIndex = drafts.length > 0 ? Math.max(...drafts.map((d) => d.draft_index)) + 1 : 1
+    const { userId } = get()
+    const now = new Date().toISOString()
     const newDraft: Answer = {
-      id: `ans-${Date.now()}`,
-      user_id: 'user-1',
+      id: `tmp-${Date.now()}`,
+      user_id: userId ?? 'unknown',
       question_id: activeQuestionId,
       draft_index: nextIndex,
       content_json: null,
       content_text: '',
       is_active: false,
-      updated_at: new Date().toISOString(),
-      created_at: new Date().toISOString(),
+      updated_at: now,
+      created_at: now,
     }
     set({ drafts: [...drafts, newDraft], activeDraftIndex: nextIndex, editorContent: null })
   },
@@ -134,12 +172,13 @@ export const createEditorSlice: StateCreator<EditorSlice, [], [], EditorSlice> =
   },
 
   addQuestion: (body, charLimit) => {
-    const { questions, activeQuestionId } = get()
+    const { questions, userId } = get()
     const selectionId = questions[0]?.selection_id
-    if (!selectionId) return
+    if (!selectionId || !userId) return
+    const tmpId = `tmp-${Date.now()}`
     const newQuestion: Question = {
-      id: `q-${Date.now()}`,
-      user_id: 'user-1',
+      id: tmpId,
+      user_id: userId,
       selection_id: selectionId,
       body,
       char_limit: charLimit,
@@ -147,7 +186,18 @@ export const createEditorSlice: StateCreator<EditorSlice, [], [], EditorSlice> =
       created_at: new Date().toISOString(),
     }
     set({ questions: [...questions, newQuestion] })
-    MOCK_QUESTIONS.push(newQuestion)
+    ;(async () => {
+      const { data, error } = await supabase
+        .from('questions')
+        .insert({ user_id: userId, selection_id: selectionId, body, char_limit: charLimit ?? null, sort_order: questions.length })
+        .select()
+        .single()
+      if (error) {
+        set((s) => ({ questions: s.questions.filter((q) => q.id !== tmpId) }))
+        return
+      }
+      set((s) => ({ questions: s.questions.map((q) => (q.id === tmpId ? data : q)) }))
+    })()
   },
 
   deleteQuestion: (id) => {
@@ -156,13 +206,18 @@ export const createEditorSlice: StateCreator<EditorSlice, [], [], EditorSlice> =
       questions: questions.filter((q) => q.id !== id),
       activeQuestionId: activeQuestionId === id ? null : activeQuestionId,
     })
+    ;(async () => {
+      await supabase.from('questions').delete().eq('id', id)
+    })()
   },
 
   addTemplate: (title, category, type, contentText) => {
-    const { templates } = get()
+    const { userId, templates } = get()
+    if (!userId) return
+    const tmpId = `tmp-${Date.now()}`
     const newTemplate: Template = {
-      id: `tmpl-${Date.now()}`,
-      user_id: 'user-1',
+      id: tmpId,
+      user_id: userId,
       title,
       content_json: textToTiptap(contentText),
       content_text: contentText,
@@ -171,22 +226,41 @@ export const createEditorSlice: StateCreator<EditorSlice, [], [], EditorSlice> =
       created_at: new Date().toISOString(),
     }
     set({ templates: [...templates, newTemplate] })
+    ;(async () => {
+      const { data, error } = await supabase
+        .from('templates')
+        .insert({ user_id: userId, title, content_json: textToTiptap(contentText), content_text: contentText, category: category || null, type: type || null })
+        .select()
+        .single()
+      if (error) {
+        set((s) => ({ templates: s.templates.filter((t) => t.id !== tmpId) }))
+        return
+      }
+      set((s) => ({ templates: s.templates.map((t) => (t.id === tmpId ? data : t)) }))
+    })()
   },
 
   updateTemplate: (id, title, category, type, contentText) => {
-    const { templates } = get()
-    set({
-      templates: templates.map((t) =>
+    set((s) => ({
+      templates: s.templates.map((t) =>
         t.id === id
           ? { ...t, title, category: category || undefined, type: type || undefined, content_json: textToTiptap(contentText), content_text: contentText }
           : t
       ),
-    })
+    }))
+    ;(async () => {
+      await supabase
+        .from('templates')
+        .update({ title, category: category || null, type: type || null, content_json: textToTiptap(contentText), content_text: contentText })
+        .eq('id', id)
+    })()
   },
 
   deleteTemplate: (id) => {
-    const { templates } = get()
-    set({ templates: templates.filter((t) => t.id !== id) })
+    set((s) => ({ templates: s.templates.filter((t) => t.id !== id) }))
+    ;(async () => {
+      await supabase.from('templates').delete().eq('id', id)
+    })()
   },
 })
 

@@ -1,6 +1,14 @@
 export type SelectionType = 'internship' | 'main' | 'other'
 
-export type SelectionStatus = 'not_started' | 'in_progress' | 'submitted'
+export type SelectionStatus =
+  | 'not_started'
+  | 'in_progress'
+  | 'submitted'
+  | 'passed_doc'
+  | 'interview'
+  | 'offered'
+  | 'rejected'
+  | 'declined'
 
 export interface Industry {
   id: string
@@ -71,6 +79,11 @@ export const STATUS_LABELS: Record<SelectionStatus, string> = {
   not_started: '未着手',
   in_progress: '進行中',
   submitted: '提出済',
+  passed_doc: '書類通過',
+  interview: '面接中',
+  offered: '内定',
+  rejected: '不合格',
+  declined: '辞退',
 }
 
 export const TYPE_LABELS: Record<SelectionType, string> = {
