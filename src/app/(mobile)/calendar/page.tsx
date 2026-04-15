@@ -105,7 +105,9 @@ export default function MobileCalendarPage() {
 
   const chipColor = (item: (typeof allDeadlines)[0]) => {
     if (item.status === 'submitted') return 'bg-green-100 text-green-700'
-    if (deadlineUrgency(item.deadline) === 'past') return 'bg-red-100 text-red-600'
+    const urgency = deadlineUrgency(item.deadline)
+    if (urgency === 'past') return 'bg-red-100 text-red-600'
+    if (urgency === 'near') return 'bg-yellow-100 text-yellow-700'
     if (item.status === 'in_progress') return 'bg-blue-100 text-blue-700'
     return 'bg-muted text-muted-foreground'
   }
