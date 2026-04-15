@@ -8,6 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { useStore } from '@/store'
 import type { SelectionType, Template } from '@/types/app'
 import { TYPE_LABELS } from '@/types/app'
+import { cn } from '@/lib/utils'
 
 type View = 'list' | 'create' | 'edit'
 
@@ -25,6 +26,7 @@ export function TemplateListView() {
   const [category, setCategory] = useState('')
   const [type, setType] = useState<SelectionType | ''>('')
   const [content, setContent] = useState('')
+  const [filterType, setFilterType] = useState<SelectionType | 'all'>('all')
 
   const resetForm = () => {
     setView('list')
@@ -79,7 +81,23 @@ export function TemplateListView() {
       {view === 'list' ? (
         <ScrollArea className="flex-1">
           <div className="p-6 max-w-2xl mx-auto space-y-3">
-            {templates.map((template) => (
+            <div className="flex gap-1.5 flex-wrap">
+              {(['all', 'main', 'internship', 'other'] as const).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setFilterType(t)}
+                  className={cn(
+                    'px-3 py-1 rounded-full text-xs border transition-colors',
+                    filterType === t
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'border-border hover:bg-accent'
+                  )}
+                >
+                  {t === 'all' ? 'すべて' : TYPE_LABELS[t]}
+                </button>
+              ))}
+            </div>
+            {(filterType === 'all' ? templates : templates.filter((t) => t.type === filterType)).map((template) => (
               <div key={template.id} className="group flex items-start gap-2">
                 <button
                   onClick={() => handleEdit(template)}
@@ -102,15 +120,13 @@ export function TemplateListView() {
                     {template.content_text}
                   </p>
                 </button>
-                {template.id.startsWith('tmpl-') && (
-                  <button
-                    onClick={() => deleteTemplate(template.id)}
-                    className="shrink-0 mt-1 p-2 rounded text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-destructive hover:bg-destructive/10 transition-all"
-                    aria-label="削除"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                )}
+                <button
+                  onClick={() => deleteTemplate(template.id)}
+                  className="shrink-0 mt-1 p-2 rounded text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-destructive hover:bg-destructive/10 transition-all"
+                  aria-label="削除"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
               </div>
             ))}
 
@@ -199,7 +215,7 @@ export function TemplateListView() {
                 <Button variant="outline" onClick={resetForm}>
                   キャンセル
                 </Button>
-                {(view === 'create' || (view === 'edit' && editingId?.startsWith('tmpl-'))) && (
+                {(view === 'create' || view === 'edit') && (
                   <Button
                     onClick={handleSave}
                     disabled={!title.trim() || !content.trim()}

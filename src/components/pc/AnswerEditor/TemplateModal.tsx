@@ -117,8 +117,7 @@ export function TemplateModal() {
                         {template.content_text}
                       </p>
                     </button>
-                    {template.id.startsWith('tmpl-') && (
-                      <div className="shrink-0 mt-1 flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-all">
+                    <div className="shrink-0 mt-1 flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-all">
                         <button
                           onClick={() => handleEdit(template)}
                           className="p-1.5 rounded text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
@@ -133,8 +132,7 @@ export function TemplateModal() {
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
-                      </div>
-                    )}
+                    </div>
                   </div>
                 ))}
               </div>

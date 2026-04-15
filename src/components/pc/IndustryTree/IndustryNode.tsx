@@ -17,6 +17,14 @@ export function IndustryNode({ industry }: IndustryNodeProps) {
   const companies = useStore(
     useShallow((s) => s.companies.filter((c) => c.industry_id === industry.id))
   )
+  const pendingCount = useStore(
+    useShallow((s) => {
+      const companyIds = new Set(s.companies.filter((c) => c.industry_id === industry.id).map((c) => c.id))
+      return s.selections.filter(
+        (sel) => companyIds.has(sel.company_id) && (sel.status === 'not_started' || sel.status === 'in_progress')
+      ).length
+    })
+  )
   const expandedNodes = useStore((s) => s.expandedNodes)
   const toggleNode = useStore((s) => s.toggleNode)
   const addCompany = useStore((s) => s.addCompany)
@@ -42,6 +50,11 @@ export function IndustryNode({ industry }: IndustryNodeProps) {
           <span className="text-sm font-medium truncate">{industry.name}</span>
           <span className="text-xs text-muted-foreground ml-1">({companies.length})</span>
         </button>
+        {pendingCount > 0 && (
+          <span className="shrink-0 text-[10px] font-medium leading-none px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400">
+            {pendingCount}
+          </span>
+        )}
         <div className="hidden group-hover:flex items-center gap-0.5 shrink-0">
           <Button
             variant="ghost"

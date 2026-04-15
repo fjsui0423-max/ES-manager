@@ -41,6 +41,14 @@ export function CompanyNode({ company }: CompanyNodeProps) {
           </span>
           <span className="text-sm truncate">{company.name}</span>
         </button>
+        {(() => {
+          const pending = selections.filter((s) => s.status === 'not_started' || s.status === 'in_progress').length
+          return pending > 0 ? (
+            <span className="shrink-0 text-[10px] font-medium leading-none px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400">
+              {pending}
+            </span>
+          ) : null
+        })()}
         <div className="hidden group-hover:flex items-center gap-0.5 shrink-0">
           <Button
             variant="ghost"
