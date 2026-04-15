@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>メールアドレスの確認</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f6fb;font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP',sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6fb;padding:40px 16px;">
+    <tr>
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;">
+
+          <!-- ヘッダー -->
+          <tr>
+            <td align="center" style="padding-bottom:24px;">
+              <span style="font-size:22px;font-weight:900;letter-spacing:-0.5px;color:#1a1a2e;">ES Manager</span>
+              <br/>
+              <span style="font-size:10px;font-weight:600;letter-spacing:3px;color:#4285f4;text-transform:uppercase;">Entry Sheet Manager</span>
+            </td>
+          </tr>
+
+          <!-- カード -->
+          <tr>
+            <td style="background:#ffffff;border-radius:20px;padding:40px 36px;box-shadow:0 4px 24px rgba(0,0,0,0.07);">
+
+              <h1 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#1a1a2e;line-height:1.4;">
+                メールアドレスの確認
+              </h1>
+              <p style="margin:0 0 28px;font-size:14px;color:#6b7280;line-height:1.7;">
+                ES Manager へのご登録ありがとうございます。<br/>
+                下のボタンをクリックして、メールアドレスを確認してください。
+              </p>
+
+              <!-- CTAボタン -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="padding-bottom:28px;">
+                    <a href="{{ .ConfirmationURL }}"
+                       style="display:inline-block;background:#4285f4;color:#ffffff;text-decoration:none;
+                              font-size:15px;font-weight:700;padding:14px 40px;border-radius:100px;
+                              box-shadow:0 4px 12px rgba(66,133,244,0.35);letter-spacing:0.3px;">
+                      メールアドレスを確認する
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:0 0 8px;font-size:12px;color:#9ca3af;line-height:1.6;">
+                ボタンが機能しない場合は、以下のURLをブラウザに貼り付けてください。
+              </p>
+              <p style="margin:0 0 28px;font-size:11px;word-break:break-all;color:#4285f4;">
+                {{ .ConfirmationURL }}
+              </p>
+
+              <hr style="border:none;border-top:1px solid #f0f0f0;margin:0 0 20px;" />
+
+              <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.7;">
+                このメールに心当たりがない場合は、無視していただいて問題ありません。<br/>
+                リンクの有効期限は<strong>24時間</strong>です。
+              </p>
+            </td>
+          </tr>
+
+          <!-- フッター -->
+          <tr>
+            <td align="center" style="padding-top:24px;">
+              <p style="margin:0;font-size:11px;color:#9ca3af;">
+                &copy; ES Manager &nbsp;|&nbsp; このメールは自動送信されています
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

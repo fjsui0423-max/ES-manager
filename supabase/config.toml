@@ -1,0 +1,12 @@
+# Supabase ローカル開発設定
+# ホスト環境（本番）のメールテンプレートは Supabase ダッシュボード
+# Authentication > Email Templates で設定してください。
+# supabase/templates/ 以下のHTMLをコピーして貼り付けてください。
+
+[auth.email.template.confirmation]
+subject = "【ES Manager】メールアドレスの確認"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.recovery]
+subject = "【ES Manager】パスワードの再設定"
+content_path = "./supabase/templates/recovery.html"

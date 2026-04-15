@@ -78,7 +78,7 @@ function TermsDialog({ children }: { children: React.ReactNode }) {
 // メインページ
 // ─────────────────────────────────────────────────────────────────────────────
 export default function LoginPage() {
-  const [mode, setMode] = useState<'login' | 'signup'>('login')
+  const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login')
 
   // フォーム値
   const [email, setEmail] = useState('')
@@ -91,7 +91,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
 
-  const switchMode = (next: 'login' | 'signup') => {
+  const switchMode = (next: 'login' | 'signup' | 'forgot') => {
     setMode(next)
     setError(null)
     setMessage(null)
@@ -121,12 +121,22 @@ export default function LoginPage() {
     if (mode === 'login') {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) setError(error.message)
-    } else {
+    } else if (mode === 'signup') {
       const { error } = await supabase.auth.signUp({ email, password })
       if (error) {
         setError(error.message)
       } else {
         setMessage('確認メールを送信しました。メール内のリンクをクリックして登録を完了してください。')
+      }
+    } else {
+      // forgot
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      })
+      if (error) {
+        setError(error.message)
+      } else {
+        setMessage('パスワード再設定用のメールを送信しました。メールをご確認ください。')
       }
     }
 
@@ -135,7 +145,7 @@ export default function LoginPage() {
 
   const isSignupValid = mode === 'signup'
     ? Boolean(email && password && confirmPassword && agreedToTerms)
-    : Boolean(email && password)
+    : Boolean(email)
 
   const passwordsMatch = confirmPassword === '' || password === confirmPassword
 
@@ -169,22 +179,39 @@ export default function LoginPage() {
         <div className="bg-white/70 dark:bg-black/40 backdrop-blur-xl border border-white/40 dark:border-white/10 shadow-2xl shadow-blue-200/40 dark:shadow-black/50 rounded-3xl p-8">
 
           {/* タブ切替 */}
-          <div className="flex bg-muted/60 rounded-2xl p-1 mb-6">
-            {(['login', 'signup'] as const).map((m) => (
+          {mode !== 'forgot' && (
+            <div className="flex bg-muted/60 rounded-2xl p-1 mb-6">
+              {(['login', 'signup'] as const).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => switchMode(m)}
+                  className={`flex-1 py-1.5 text-xs font-medium rounded-xl transition-all duration-200 ease-out ${
+                    mode === m
+                      ? 'bg-white dark:bg-white/15 text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {m === 'login' ? 'ログイン' : '新規登録'}
+                </button>
+              ))}
+            </div>
+          )}
+          {mode === 'forgot' && (
+            <div className="mb-6">
               <button
-                key={m}
                 type="button"
-                onClick={() => switchMode(m)}
-                className={`flex-1 py-1.5 text-xs font-medium rounded-xl transition-all duration-200 ease-out ${
-                  mode === m
-                    ? 'bg-white dark:bg-white/15 text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
+                onClick={() => switchMode('login')}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
               >
-                {m === 'login' ? 'ログイン' : '新規登録'}
+                ← ログインに戻る
               </button>
-            ))}
-          </div>
+              <h2 className="mt-3 text-base font-bold text-foreground">パスワードを再設定</h2>
+              <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                登録済みのメールアドレスを入力してください。パスワード再設定用のリンクをお送りします。
+              </p>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-3.5">
             {/* メールアドレス */}
@@ -205,8 +232,8 @@ export default function LoginPage() {
               />
             </div>
 
-            {/* パスワード */}
-            <div className="space-y-1.5">
+            {/* パスワード（forgot モードでは非表示） */}
+            {mode !== 'forgot' && <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">パスワード</label>
               <input
                 type="password"
@@ -222,7 +249,19 @@ export default function LoginPage() {
                            focus:border-primary focus:ring-2 focus:ring-primary/30
                            transition-all duration-200 ease-out placeholder:text-muted-foreground/60"
               />
-            </div>
+            </div>}
+            {/* ログイン時のみ：パスワード忘れリンク */}
+            {mode === 'login' && (
+              <div className="text-right -mt-1">
+                <button
+                  type="button"
+                  onClick={() => switchMode('forgot')}
+                  className="text-xs text-primary hover:opacity-70 transition-opacity"
+                >
+                  パスワードをお忘れですか？
+                </button>
+              </div>
+            )}
 
             {/* パスワード確認（新規登録のみ） */}
             {mode === 'signup' && (
@@ -318,7 +357,9 @@ export default function LoginPage() {
             >
               {loading
                 ? '処理中...'
-                : mode === 'login' ? 'ログイン' : 'アカウントを作成'}
+                : mode === 'login' ? 'ログイン'
+                : mode === 'signup' ? 'アカウントを作成'
+                : '再設定メールを送信'}
             </button>
           </form>
         </div>
