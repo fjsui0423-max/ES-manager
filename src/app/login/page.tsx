@@ -29,7 +29,7 @@ const meshStyle: React.CSSProperties = {
 function TermsDialog({ children }: { children: React.ReactNode }) {
   return (
     <Dialog>
-      <DialogTrigger render={<span />}>{children}</DialogTrigger>
+      <DialogTrigger render={<button type="button" />}>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-lg max-h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>利用規約</DialogTitle>
@@ -146,18 +146,14 @@ export default function LoginPage() {
 
       <div className="relative z-10 w-full max-w-sm">
         {/* ロゴ */}
-        <div className="text-center mb-8">
-          <div className="inline-flex mb-4">
-            <Image
-              src="/ES-manager-logo.png"
-              alt="ES Manager"
-              width={56}
-              height={56}
-              className="rounded-2xl shadow-xl shadow-primary/25"
-            />
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">ES Manager</h1>
-          <p className="text-sm text-muted-foreground mt-1">就活ES管理ツール</p>
+        <div className="flex justify-center mb-8">
+          <Image
+            src="/ES-manager-logo.png"
+            alt="ES Manager"
+            width={72}
+            height={72}
+            className="rounded-2xl shadow-xl shadow-primary/25"
+          />
         </div>
 
         {/* カード */}
