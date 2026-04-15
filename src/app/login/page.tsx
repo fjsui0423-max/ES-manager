@@ -2,7 +2,16 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
+import { Check } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from '@/components/ui/dialog'
 
 const meshStyle: React.CSSProperties = {
   background: `
@@ -14,30 +23,99 @@ const meshStyle: React.CSSProperties = {
   `,
 }
 
-function GoogleIcon() {
+// ─────────────────────────────────────────────────────────────────────────────
+// 利用規約モーダル
+// ─────────────────────────────────────────────────────────────────────────────
+function TermsDialog({ children }: { children: React.ReactNode }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
-      <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908C16.658 14.013 17.64 11.71 17.64 9.2z" />
-      <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" />
-      <path fill="#FBBC05" d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z" />
-      <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 6.293C4.672 4.166 6.656 3.58 9 3.58z" />
-    </svg>
+    <Dialog>
+      <DialogTrigger render={<span />}>{children}</DialogTrigger>
+      <DialogContent className="sm:max-w-lg max-h-[80vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle>利用規約</DialogTitle>
+        </DialogHeader>
+
+        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            TODO: 以下に利用規約の本文を記載してください
+            例: 各条文を <section> + <h3> + <p> で構造化する
+        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+        <div className="flex-1 overflow-y-auto pr-1 text-sm text-muted-foreground space-y-4 leading-relaxed min-h-0">
+          <section>
+            <h3 className="font-semibold text-foreground mb-1">第1条（目的）</h3>
+            <p>【ここに利用規約の本文を記載してください】</p>
+          </section>
+
+          <section>
+            <h3 className="font-semibold text-foreground mb-1">第2条（サービスの内容）</h3>
+            <p>【ここに利用規約の本文を記載してください】</p>
+          </section>
+
+          <section>
+            <h3 className="font-semibold text-foreground mb-1">第3条（禁止事項）</h3>
+            <p>【ここに利用規約の本文を記載してください】</p>
+          </section>
+
+          <section>
+            <h3 className="font-semibold text-foreground mb-1">第4条（免責事項）</h3>
+            <p>【ここに利用規約の本文を記載してください】</p>
+          </section>
+
+          <section>
+            <h3 className="font-semibold text-foreground mb-1">第5条（個人情報の取扱い）</h3>
+            <p>【ここに利用規約の本文を記載してください】</p>
+          </section>
+        </div>
+        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+
+        <DialogFooter showCloseButton>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// メインページ
+// ─────────────────────────────────────────────────────────────────────────────
 export default function LoginPage() {
   const [mode, setMode] = useState<'login' | 'signup'>('login')
+
+  // フォーム値
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
+
+  // 状態
   const [loading, setLoading] = useState(false)
-  const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
+
+  const switchMode = (next: 'login' | 'signup') => {
+    setMode(next)
+    setError(null)
+    setMessage(null)
+    setPassword('')
+    setConfirmPassword('')
+    setAgreedToTerms(false)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
     setMessage(null)
+
+    if (mode === 'signup') {
+      if (password !== confirmPassword) {
+        setError('パスワードが一致しません。')
+        return
+      }
+      if (!agreedToTerms) {
+        setError('利用規約への同意が必要です。')
+        return
+      }
+    }
+
     setLoading(true)
 
     if (mode === 'login') {
@@ -48,36 +126,28 @@ export default function LoginPage() {
       if (error) {
         setError(error.message)
       } else {
-        setMessage('確認メールを送信しました。メールを確認してください。')
+        setMessage('確認メールを送信しました。メール内のリンクをクリックして登録を完了してください。')
       }
     }
 
     setLoading(false)
   }
 
-  const handleGoogleSignIn = async () => {
-    setError(null)
-    setGoogleLoading(true)
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${window.location.origin}/` },
-    })
-    if (error) {
-      setError(error.message)
-      setGoogleLoading(false)
-    }
-  }
+  const isSignupValid = mode === 'signup'
+    ? Boolean(email && password && confirmPassword && agreedToTerms)
+    : Boolean(email && password)
+
+  const passwordsMatch = confirmPassword === '' || password === confirmPassword
 
   return (
     <div className="relative min-h-screen flex items-center justify-center px-4 bg-[oklch(0.977_0.008_254)]">
-      {/* Mesh gradient background */}
+      {/* Mesh gradient */}
       <div className="absolute inset-0 z-0" style={meshStyle} />
 
-      {/* Content */}
       <div className="relative z-10 w-full max-w-sm">
-        {/* Title */}
+        {/* ロゴ */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center mb-4">
+          <div className="inline-flex mb-4">
             <Image
               src="/ES-manager-logo.png"
               alt="ES Manager"
@@ -90,39 +160,29 @@ export default function LoginPage() {
           <p className="text-sm text-muted-foreground mt-1">就活ES管理ツール</p>
         </div>
 
-        {/* Glassmorphism card */}
+        {/* カード */}
         <div className="bg-white/70 dark:bg-black/40 backdrop-blur-xl border border-white/40 dark:border-white/10 shadow-2xl shadow-blue-200/40 dark:shadow-black/50 rounded-3xl p-8">
-          <h2 className="text-base font-semibold mb-5 text-foreground">
-            {mode === 'login' ? 'ログイン' : '新規登録'}
-          </h2>
 
-          {/* Google OAuth button */}
-          <button
-            type="button"
-            onClick={handleGoogleSignIn}
-            disabled={googleLoading}
-            className="w-full flex items-center justify-center gap-3
-                       rounded-2xl border border-white/60 dark:border-white/20
-                       bg-white/85 dark:bg-white/10 backdrop-blur-sm
-                       px-4 py-3 text-sm font-medium text-foreground
-                       shadow-sm hover:bg-white/95 hover:shadow-md hover:-translate-y-0.5
-                       active:translate-y-0 active:shadow-sm
-                       transition-all duration-200 ease-out
-                       disabled:opacity-50 disabled:cursor-not-allowed
-                       disabled:hover:shadow-sm disabled:hover:translate-y-0"
-          >
-            <GoogleIcon />
-            {googleLoading ? '接続中...' : 'Googleで続ける'}
-          </button>
-
-          {/* Divider */}
-          <div className="flex items-center gap-3 my-5">
-            <div className="flex-1 h-px bg-border/50" />
-            <span className="text-xs text-muted-foreground">または</span>
-            <div className="flex-1 h-px bg-border/50" />
+          {/* タブ切替 */}
+          <div className="flex bg-muted/60 rounded-2xl p-1 mb-6">
+            {(['login', 'signup'] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => switchMode(m)}
+                className={`flex-1 py-1.5 text-xs font-medium rounded-xl transition-all duration-200 ease-out ${
+                  mode === m
+                    ? 'bg-white dark:bg-white/15 text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {m === 'login' ? 'ログイン' : '新規登録'}
+              </button>
+            ))}
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3.5">
+            {/* メールアドレス */}
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">メールアドレス</label>
               <input
@@ -140,6 +200,7 @@ export default function LoginPage() {
               />
             </div>
 
+            {/* パスワード */}
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">パスワード</label>
               <input
@@ -148,7 +209,7 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                placeholder="••••••••"
+                placeholder={mode === 'signup' ? '6文字以上' : '••••••••'}
                 minLength={6}
                 className="w-full rounded-2xl border border-white/50 dark:border-white/20
                            bg-white/60 dark:bg-white/10 backdrop-blur-sm
@@ -158,6 +219,77 @@ export default function LoginPage() {
               />
             </div>
 
+            {/* パスワード確認（新規登録のみ） */}
+            {mode === 'signup' && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">パスワード（確認）</label>
+                <div className="relative">
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    autoComplete="new-password"
+                    placeholder="もう一度入力"
+                    className={`w-full rounded-2xl border backdrop-blur-sm
+                               bg-white/60 dark:bg-white/10
+                               px-4 py-3 text-sm outline-none pr-10
+                               focus:ring-2 transition-all duration-200 ease-out
+                               placeholder:text-muted-foreground/60
+                               ${!passwordsMatch
+                                 ? 'border-red-400/70 focus:border-red-400 focus:ring-red-400/25'
+                                 : confirmPassword
+                                   ? 'border-green-400/70 focus:border-green-400 focus:ring-green-400/25'
+                                   : 'border-white/50 dark:border-white/20 focus:border-primary focus:ring-primary/30'
+                               }`}
+                  />
+                  {confirmPassword && passwordsMatch && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <Check className="h-4 w-4 text-green-500" />
+                    </div>
+                  )}
+                </div>
+                {!passwordsMatch && (
+                  <p className="text-[11px] text-red-500 pl-1">パスワードが一致しません</p>
+                )}
+              </div>
+            )}
+
+            {/* 利用規約同意（新規登録のみ） */}
+            {mode === 'signup' && (
+              <div className="pt-1">
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <div className="relative shrink-0 mt-0.5">
+                    <input
+                      type="checkbox"
+                      checked={agreedToTerms}
+                      onChange={(e) => setAgreedToTerms(e.target.checked)}
+                      className="sr-only"
+                    />
+                    <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200 ${
+                      agreedToTerms
+                        ? 'bg-primary border-primary'
+                        : 'border-border/70 bg-white/60 group-hover:border-primary/50'
+                    }`}>
+                      {agreedToTerms && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
+                    </div>
+                  </div>
+                  <span className="text-xs text-muted-foreground leading-relaxed">
+                    <TermsDialog>
+                      <button
+                        type="button"
+                        className="text-primary underline underline-offset-2 hover:opacity-80 transition-opacity"
+                      >
+                        利用規約
+                      </button>
+                    </TermsDialog>
+                    に同意する
+                  </span>
+                </label>
+              </div>
+            )}
+
+            {/* エラー / メッセージ */}
             {error && (
               <p className="text-xs text-red-600 bg-red-50/80 backdrop-blur-sm border border-red-200/60 rounded-xl px-4 py-2.5">
                 {error}
@@ -169,31 +301,24 @@ export default function LoginPage() {
               </p>
             )}
 
+            {/* 送信ボタン */}
             <button
               type="submit"
-              disabled={loading}
-              className="w-full rounded-2xl bg-primary text-primary-foreground
+              disabled={loading || !isSignupValid}
+              className="w-full mt-1 rounded-2xl bg-primary text-primary-foreground
                          px-4 py-3 text-sm font-semibold
                          shadow-md shadow-primary/20
                          hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5
                          active:translate-y-0 active:shadow-md
                          transition-all duration-300 ease-out
-                         disabled:opacity-50 disabled:cursor-not-allowed
+                         disabled:opacity-40 disabled:cursor-not-allowed
                          disabled:hover:shadow-md disabled:hover:translate-y-0"
             >
-              {loading ? '処理中...' : mode === 'login' ? 'ログイン' : '登録する'}
+              {loading
+                ? '処理中...'
+                : mode === 'login' ? 'ログイン' : 'アカウントを作成'}
             </button>
           </form>
-
-          <div className="mt-5 text-center">
-            <button
-              type="button"
-              onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(null); setMessage(null) }}
-              className="text-xs text-muted-foreground hover:text-primary transition-colors duration-200"
-            >
-              {mode === 'login' ? 'アカウントをお持ちでない方はこちら' : 'すでにアカウントをお持ちの方はこちら'}
-            </button>
-          </div>
         </div>
       </div>
     </div>
