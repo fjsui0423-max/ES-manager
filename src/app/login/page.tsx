@@ -281,12 +281,9 @@ export default function LoginPage() {
                   </div>
                   <span className="text-xs text-muted-foreground leading-relaxed">
                     <TermsDialog>
-                      <button
-                        type="button"
-                        className="text-primary underline underline-offset-2 hover:opacity-80 transition-opacity"
-                      >
+                      <span className="text-primary underline underline-offset-2 hover:opacity-80 transition-opacity cursor-pointer">
                         利用規約
-                      </button>
+                      </span>
                     </TermsDialog>
                     に同意する
                   </span>
