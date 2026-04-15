@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useCallback } from 'react'
+import Image from 'next/image'
 import { PenLine, BookOpen, CalendarDays, LogOut } from 'lucide-react'
 import { useStore } from '@/store'
 import { supabase } from '@/lib/supabase'
@@ -71,6 +72,12 @@ export function PCLayout() {
     <div className="flex flex-col h-screen overflow-hidden bg-background">
       {/* 半透明ヘッダー */}
       <div className="flex items-center gap-0.5 px-3 border-b border-border/40 bg-background/80 backdrop-blur-md shrink-0 h-12 sticky top-0 z-10">
+        {/* ロゴ + アプリ名 */}
+        <div className="flex items-center gap-2 mr-2 px-1">
+          <Image src="/ES-manager-logo.png" alt="ES Manager" width={24} height={24} className="rounded-lg" />
+          <span className="text-sm font-semibold tracking-tight text-foreground">ES Manager</span>
+        </div>
+        <div className="w-px h-4 bg-border/60 mr-1 shrink-0" />
         {NAV_ITEMS.map(({ view, label, icon: Icon }) => (
           <button
             key={view}
