@@ -69,17 +69,17 @@ export function PCLayout() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background">
-      {/* 上部ナビゲーション */}
-      <div className="flex items-center gap-1 px-4 border-b border-border bg-background shrink-0 h-10">
+      {/* 半透明ヘッダー */}
+      <div className="flex items-center gap-0.5 px-3 border-b border-border/40 bg-background/80 backdrop-blur-md shrink-0 h-12 sticky top-0 z-10">
         {NAV_ITEMS.map(({ view, label, icon: Icon }) => (
           <button
             key={view}
             onClick={() => setPcView(view)}
             className={cn(
-              'flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md transition-colors',
+              'flex items-center gap-1.5 px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-200 ease-out',
               pcView === view
-                ? 'bg-primary/10 text-primary font-medium'
-                : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                ? 'bg-primary/10 text-primary'
+                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
             )}
           >
             <Icon className="h-3.5 w-3.5" />
@@ -90,7 +90,7 @@ export function PCLayout() {
           <button
             onClick={() => supabase.auth.signOut()}
             title="ログアウト"
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-medium rounded-full text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-all duration-200 ease-out"
           >
             <LogOut className="h-3.5 w-3.5" />
             ログアウト
@@ -100,10 +100,10 @@ export function PCLayout() {
 
       {/* メインコンテンツ */}
       {pcView === 'editor' ? (
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-1 overflow-hidden p-3 gap-0">
           {/* 左カラム: 業界ツリー */}
           <div
-            className="flex flex-col border-r border-border bg-sidebar shrink-0 overflow-hidden"
+            className="bg-card rounded-2xl shadow-sm border border-border/50 shrink-0 overflow-hidden flex flex-col transition-shadow duration-200 hover:shadow-md"
             style={{ width: treeWidth }}
           >
             <IndustryTree />
@@ -111,13 +111,15 @@ export function PCLayout() {
 
           {/* リサイズハンドル 1 */}
           <div
-            className="w-1 cursor-col-resize hover:bg-primary/30 transition-colors shrink-0"
+            className="w-3 shrink-0 flex items-center justify-center cursor-col-resize group"
             onMouseDown={startResizeTree}
-          />
+          >
+            <div className="w-0.5 h-10 rounded-full bg-transparent group-hover:bg-primary/40 transition-all duration-300 ease-out" />
+          </div>
 
           {/* 中カラム: 設問リスト */}
           <div
-            className="flex flex-col border-r border-border shrink-0 overflow-hidden"
+            className="bg-card rounded-2xl shadow-sm border border-border/50 shrink-0 overflow-hidden flex flex-col transition-shadow duration-200 hover:shadow-md"
             style={{ width: questionWidth }}
           >
             <QuestionList />
@@ -125,22 +127,28 @@ export function PCLayout() {
 
           {/* リサイズハンドル 2 */}
           <div
-            className="w-1 cursor-col-resize hover:bg-primary/30 transition-colors shrink-0"
+            className="w-3 shrink-0 flex items-center justify-center cursor-col-resize group"
             onMouseDown={startResizeQuestion}
-          />
+          >
+            <div className="w-0.5 h-10 rounded-full bg-transparent group-hover:bg-primary/40 transition-all duration-300 ease-out" />
+          </div>
 
           {/* 右カラム: 回答エディタ */}
-          <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+          <div className="bg-card rounded-2xl shadow-sm border border-border/50 flex-1 overflow-hidden flex flex-col min-w-0 transition-shadow duration-200 hover:shadow-md">
             <AnswerEditor />
           </div>
         </div>
       ) : pcView === 'templates' ? (
-        <div className="flex flex-1 overflow-hidden">
-          <TemplateListView />
+        <div className="flex flex-1 overflow-hidden p-3">
+          <div className="bg-card rounded-2xl shadow-sm border border-border/50 flex-1 overflow-hidden flex flex-col">
+            <TemplateListView />
+          </div>
         </div>
       ) : (
-        <div className="flex flex-1 overflow-hidden">
-          <CalendarView />
+        <div className="flex flex-1 overflow-hidden p-3">
+          <div className="bg-card rounded-2xl shadow-sm border border-border/50 flex-1 overflow-hidden flex flex-col">
+            <CalendarView />
+          </div>
         </div>
       )}
     </div>
