@@ -13,19 +13,13 @@ interface SelectionNodeProps {
   selection: Selection
 }
 
-const STATUS_CYCLE: SelectionStatus[] = [
-  'not_started', 'in_progress', 'submitted', 'passed_doc', 'interview', 'offered', 'rejected', 'declined',
-]
+const STATUS_CYCLE: SelectionStatus[] = ['not_started', 'in_progress', 'submitted', 'declined']
 
 const statusColors: Partial<Record<string, string>> = {
-  not_started:  'bg-muted text-muted-foreground',
-  in_progress:  'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
-  submitted:    'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
-  passed_doc:   'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300',
-  interview:    'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
-  offered:      'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
-  rejected:     'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400',
-  declined:     'bg-muted text-muted-foreground line-through',
+  not_started: 'bg-muted text-muted-foreground',
+  in_progress: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+  submitted:   'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
+  declined:    'bg-muted text-muted-foreground line-through',
 }
 
 function formatDeadline(deadline: string): string {

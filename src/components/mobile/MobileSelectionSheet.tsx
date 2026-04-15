@@ -12,18 +12,12 @@ interface MobileSelectionSheetProps {
   onClose: () => void
 }
 
-const STATUS_CYCLE: SelectionStatus[] = [
-  'not_started', 'in_progress', 'submitted', 'passed_doc', 'interview', 'offered', 'rejected', 'declined',
-]
+const STATUS_CYCLE: SelectionStatus[] = ['not_started', 'in_progress', 'submitted', 'declined']
 
 const statusColors: Record<string, string> = {
   not_started: 'bg-muted text-muted-foreground',
   in_progress: 'bg-blue-100 text-blue-700',
   submitted:   'bg-green-100 text-green-700',
-  passed_doc:  'bg-teal-100 text-teal-700',
-  interview:   'bg-orange-100 text-orange-700',
-  offered:     'bg-emerald-100 text-emerald-700',
-  rejected:    'bg-red-100 text-red-600',
   declined:    'bg-muted text-muted-foreground line-through',
 }
 
