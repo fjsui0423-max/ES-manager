@@ -45,6 +45,8 @@ export const createEditorSlice: StateCreator<AppStore, [], [], EditorSlice> = (s
   templates: [],
 
   setQuestionsForSelection: (selectionId) => {
+    const { isDirty } = get()
+    if (isDirty) get().markSaved()
     set({ questions: [], activeQuestionId: null, drafts: [], editorContent: null, isDirty: false })
     const { userId } = get()
     if (!userId) return
@@ -60,6 +62,8 @@ export const createEditorSlice: StateCreator<AppStore, [], [], EditorSlice> = (s
   },
 
   setActiveQuestion: (id) => {
+    const { isDirty, activeQuestionId } = get()
+    if (isDirty && activeQuestionId) get().markSaved()
     set({ activeQuestionId: id, drafts: [], activeDraftIndex: 1, editorContent: null, isDirty: false })
     const { userId } = get()
     if (!userId) return

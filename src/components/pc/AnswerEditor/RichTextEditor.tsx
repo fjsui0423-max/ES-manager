@@ -60,7 +60,7 @@ export function RichTextEditor({ charLimit }: RichTextEditorProps) {
     immediatelyRender: false,
   })
 
-  // エディタ内容を外部から更新（タブ切替・テンプレート適用時）
+  // Effect A: ナビゲーション時にエディタ内容をリセット（保存不要）
   useEffect(() => {
     if (!editor) return
     isInternalUpdate.current = true
@@ -69,9 +69,23 @@ export function RichTextEditor({ charLimit }: RichTextEditorProps) {
     } else {
       editor.commands.clearContent()
     }
-    // 次のマイクロタスクでフラグを戻す
     Promise.resolve().then(() => { isInternalUpdate.current = false })
-  }, [activeQuestionId, activeDraftIndex, templateApplySignal]) // editorContentを依存に含めない（ループ防止）
+  }, [activeQuestionId, activeDraftIndex]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Effect B: テンプレート適用時（setContent 後に即時保存）
+  useEffect(() => {
+    if (!editor || templateApplySignal === 0) return // 初回マウントはスキップ
+    isInternalUpdate.current = true
+    if (editorContent) {
+      editor.commands.setContent(editorContent)
+    } else {
+      editor.commands.clearContent()
+    }
+    Promise.resolve().then(() => {
+      isInternalUpdate.current = false
+      markSaved() // テンプレート内容を Supabase へ即時保存
+    })
+  }, [templateApplySignal]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // アンマウント時に保存
   useEffect(() => {
