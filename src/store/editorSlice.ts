@@ -14,6 +14,7 @@ export interface EditorSlice {
   editorContent: JSONContent | null
   isDirty: boolean
   templateApplySignal: number
+  contentLoadSignal: number
 
   templates: Template[]
 
@@ -41,6 +42,7 @@ export const createEditorSlice: StateCreator<AppStore, [], [], EditorSlice> = (s
   editorContent: null,
   isDirty: false,
   templateApplySignal: 0,
+  contentLoadSignal: 0,
 
   templates: [],
 
@@ -76,12 +78,13 @@ export const createEditorSlice: StateCreator<AppStore, [], [], EditorSlice> = (s
         .order('draft_index')
       const drafts: Answer[] = data ?? []
       const firstDraft = drafts[0] ?? null
-      set({
+      set((s) => ({
         drafts,
         activeDraftIndex: firstDraft?.draft_index ?? 1,
         editorContent: (firstDraft?.content_json as JSONContent | null) ?? null,
         isDirty: false,
-      })
+        contentLoadSignal: s.contentLoadSignal + 1,
+      }))
     })()
   },
 
@@ -173,6 +176,8 @@ export const createEditorSlice: StateCreator<AppStore, [], [], EditorSlice> = (s
       isDirty: true,
       templateApplySignal: state.templateApplySignal + 1,
     }))
+    // set() は同期的にストアを更新するため、直後に get() で最新状態を参照して即時保存できる
+    get().markSaved()
   },
 
   addQuestion: (body, charLimit) => {

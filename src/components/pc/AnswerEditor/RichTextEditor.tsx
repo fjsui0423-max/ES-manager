@@ -34,6 +34,7 @@ export function RichTextEditor({ charLimit }: RichTextEditorProps) {
   const activeQuestionId = useStore((s) => s.activeQuestionId)
   const activeDraftIndex = useStore((s) => s.activeDraftIndex)
   const templateApplySignal = useStore((s) => s.templateApplySignal)
+  const contentLoadSignal = useStore((s) => s.contentLoadSignal)
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isInternalUpdate = useRef(false)
@@ -60,7 +61,7 @@ export function RichTextEditor({ charLimit }: RichTextEditorProps) {
     immediatelyRender: false,
   })
 
-  // Effect A: ナビゲーション時にエディタ内容をリセット（保存不要）
+  // Effect A: 設問・ドラフト切替時、またはサーバーからの内容ロード完了時にエディタ内容を同期する
   useEffect(() => {
     if (!editor) return
     isInternalUpdate.current = true
@@ -70,9 +71,10 @@ export function RichTextEditor({ charLimit }: RichTextEditorProps) {
       editor.commands.clearContent()
     }
     Promise.resolve().then(() => { isInternalUpdate.current = false })
-  }, [activeQuestionId, activeDraftIndex]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeQuestionId, activeDraftIndex, contentLoadSignal]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Effect B: テンプレート適用時（setContent 後に即時保存）
+  // Effect B: テンプレート適用時（Tiptap エディタの表示を更新する）
+  // 保存は applyTemplate() 内で get().markSaved() により同期的に完了済み
   useEffect(() => {
     if (!editor || templateApplySignal === 0) return // 初回マウントはスキップ
     isInternalUpdate.current = true
@@ -83,7 +85,6 @@ export function RichTextEditor({ charLimit }: RichTextEditorProps) {
     }
     Promise.resolve().then(() => {
       isInternalUpdate.current = false
-      markSaved() // テンプレート内容を Supabase へ即時保存
     })
   }, [templateApplySignal]) // eslint-disable-line react-hooks/exhaustive-deps
 
