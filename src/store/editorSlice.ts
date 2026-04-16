@@ -64,6 +64,9 @@ export const createEditorSlice: StateCreator<AppStore, [], [], EditorSlice> = (s
   },
 
   setActiveQuestion: (id) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('es-manager:lastQuestionId', id)
+    }
     const { isDirty, activeQuestionId } = get()
     if (isDirty && activeQuestionId) get().markSaved()
     set({ activeQuestionId: id, drafts: [], activeDraftIndex: 1, editorContent: null, isDirty: false })

@@ -37,7 +37,11 @@ export const createTreeSlice: StateCreator<AppStore, [], [], TreeSlice> = (set, 
 
   expandedNodes: new Set<string>(),
 
-  setActiveSelection: (selectionId) =>
+  setActiveSelection: (selectionId) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('es-manager:lastSelectionId', selectionId)
+      localStorage.removeItem('es-manager:lastQuestionId')
+    }
     set((state) => {
       const selection = state.selections.find((s) => s.id === selectionId)
       if (!selection) return {}
@@ -53,7 +57,8 @@ export const createTreeSlice: StateCreator<AppStore, [], [], TreeSlice> = (set, 
         activeIndustryId: company?.industry_id ?? null,
         expandedNodes: newExpanded,
       }
-    }),
+    })
+  },
 
   toggleNode: (nodeId) =>
     set((state) => {
