@@ -4,6 +4,11 @@ import type { JSONContent } from '@tiptap/react'
 import type { Question, Answer, Template, SelectionType } from '@/types/app'
 import { supabase } from '@/lib/supabase'
 
+type PrefetchEntry = {
+  questions: Question[]
+  answers: Record<string, Answer[]> // questionId → answers
+}
+
 export interface EditorSlice {
   questions: Question[]
   activeQuestionId: string | null
@@ -18,6 +23,8 @@ export interface EditorSlice {
 
   templates: Template[]
 
+  prefetchCache: Map<string, PrefetchEntry>
+
   setQuestionsForSelection: (selectionId: string) => void
   setActiveQuestion: (id: string) => void
   setActiveDraftIndex: (index: number) => void
@@ -30,6 +37,7 @@ export interface EditorSlice {
   addTemplate: (title: string, category: string, type: SelectionType | undefined, contentText: string) => void
   updateTemplate: (id: string, title: string, category: string, type: SelectionType | undefined, contentText: string) => void
   deleteTemplate: (id: string) => void
+  prefetchForSelection: (selectionId: string) => void
 }
 
 export const createEditorSlice: StateCreator<AppStore, [], [], EditorSlice> = (set, get) => ({
@@ -46,12 +54,51 @@ export const createEditorSlice: StateCreator<AppStore, [], [], EditorSlice> = (s
 
   templates: [],
 
+  prefetchCache: new Map(),
+
+  prefetchForSelection: (selectionId) => {
+    const { prefetchCache, userId } = get()
+    if (prefetchCache.has(selectionId) || !userId) return
+    ;(async () => {
+      const { data: qData } = await supabase
+        .from('questions')
+        .select('*')
+        .eq('selection_id', selectionId)
+        .eq('user_id', userId)
+        .order('sort_order')
+      const questions: Question[] = qData ?? []
+      const answers: Record<string, Answer[]> = {}
+      if (questions.length > 0) {
+        const ids = questions.map((q) => q.id)
+        const { data: aData } = await supabase
+          .from('answers')
+          .select('*')
+          .in('question_id', ids)
+          .eq('user_id', userId)
+          .order('draft_index')
+        const allAnswers: Answer[] = aData ?? []
+        for (const q of questions) {
+          answers[q.id] = allAnswers.filter((a) => a.question_id === q.id)
+        }
+      }
+      // Map を直接変更するだけでリレンダリングを起こさない
+      prefetchCache.set(selectionId, { questions, answers })
+    })()
+  },
+
   setQuestionsForSelection: (selectionId) => {
-    const { isDirty } = get()
+    const { isDirty, prefetchCache } = get()
     if (isDirty) get().markSaved()
     set({ questions: [], activeQuestionId: null, drafts: [], editorContent: null, isDirty: false })
     const { userId } = get()
     if (!userId) return
+
+    const cached = prefetchCache.get(selectionId)
+    if (cached) {
+      set({ questions: cached.questions })
+      return
+    }
+
     ;(async () => {
       const { data } = await supabase
         .from('questions')
@@ -67,11 +114,27 @@ export const createEditorSlice: StateCreator<AppStore, [], [], EditorSlice> = (s
     if (typeof window !== 'undefined') {
       localStorage.setItem('es-manager:lastQuestionId', id)
     }
-    const { isDirty, activeQuestionId } = get()
+    const { isDirty, activeQuestionId, prefetchCache, activeSelectionId } = get()
     if (isDirty && activeQuestionId) get().markSaved()
     set({ activeQuestionId: id, drafts: [], activeDraftIndex: 1, editorContent: null, isDirty: false })
     const { userId } = get()
     if (!userId) return
+
+    // キャッシュから answers を取得
+    const cached = activeSelectionId ? prefetchCache.get(activeSelectionId) : undefined
+    if (cached) {
+      const drafts: Answer[] = cached.answers[id] ?? []
+      const firstDraft = drafts[0] ?? null
+      set((s) => ({
+        drafts,
+        activeDraftIndex: firstDraft?.draft_index ?? 1,
+        editorContent: (firstDraft?.content_json as JSONContent | null) ?? null,
+        isDirty: false,
+        contentLoadSignal: s.contentLoadSignal + 1,
+      }))
+      return
+    }
+
     ;(async () => {
       const { data } = await supabase
         .from('answers')
@@ -106,22 +169,23 @@ export const createEditorSlice: StateCreator<AppStore, [], [], EditorSlice> = (s
   },
 
   markSaved: () => {
-    const { activeQuestionId, activeDraftIndex, editorContent, drafts, userId } = get()
+    const { activeQuestionId, activeDraftIndex, editorContent, drafts, userId, activeSelectionId, prefetchCache } = get()
     if (!activeQuestionId || !editorContent || !userId) return
 
     const contentText = extractText(editorContent)
     const existingIndex = drafts.findIndex((d) => d.draft_index === activeDraftIndex)
     const now = new Date().toISOString()
 
+    let updatedDrafts: Answer[]
     if (existingIndex >= 0) {
-      const updated = [...drafts]
-      updated[existingIndex] = {
-        ...updated[existingIndex],
+      updatedDrafts = [...drafts]
+      updatedDrafts[existingIndex] = {
+        ...updatedDrafts[existingIndex],
         content_json: editorContent,
         content_text: contentText,
         updated_at: now,
       }
-      set({ drafts: updated, isDirty: false })
+      set({ drafts: updatedDrafts, isDirty: false })
     } else {
       const newDraft: Answer = {
         id: `tmp-${Date.now()}`,
@@ -134,7 +198,16 @@ export const createEditorSlice: StateCreator<AppStore, [], [], EditorSlice> = (s
         updated_at: now,
         created_at: now,
       }
-      set({ drafts: [...drafts, newDraft], isDirty: false })
+      updatedDrafts = [...drafts, newDraft]
+      set({ drafts: updatedDrafts, isDirty: false })
+    }
+
+    // キャッシュの answers も更新
+    if (activeSelectionId) {
+      const cached = prefetchCache.get(activeSelectionId)
+      if (cached) {
+        cached.answers[activeQuestionId] = updatedDrafts
+      }
     }
 
     ;(async () => {

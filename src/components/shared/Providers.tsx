@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useStore } from '@/store'
@@ -9,8 +9,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const initializeData = useStore((s) => s.initializeData)
   const clearData = useStore((s) => s.clearData)
   const isAuthReady = useStore((s) => s.isAuthReady)
+  const userId = useStore((s) => s.userId)
   const router = useRouter()
   const pathname = usePathname()
+
+  // ref でクロージャ内から最新の userId を参照できるようにする
+  const userIdRef = useRef(userId)
+  useEffect(() => { userIdRef.current = userId }, [userId])
 
   useEffect(() => {
     // 初回セッション確認
@@ -26,7 +31,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
     // 認証状態の変化を購読
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        initializeData(session.user.id)
+        // 同一ユーザーのトークンリフレッシュ等では再初期化しない
+        if (session.user.id !== userIdRef.current) {
+          initializeData(session.user.id)
+        }
         if (pathname === '/login') router.replace('/')
       } else {
         clearData()

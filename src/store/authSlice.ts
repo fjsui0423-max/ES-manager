@@ -111,6 +111,7 @@ export const createAuthSlice: StateCreator<AppStore, [], [], AuthSlice> = (set, 
       companies: loadedCompanies,
       selections: loadedSelections,
       templates: templates ?? [],
+      prefetchCache: new Map(),
       // ツリー状態
       activeSelectionId: validSelection?.id ?? null,
       activeCompanyId: validSelection?.company_id ?? null,
@@ -125,6 +126,16 @@ export const createAuthSlice: StateCreator<AppStore, [], [], AuthSlice> = (set, 
       isDirty: false,
       contentLoadSignal: get().contentLoadSignal + 1,
     })
+
+    // バックグラウンドプリフェッチ: アクティブ企業の全選考
+    if (validSelection) {
+      const companySelections = loadedSelections.filter(
+        (s) => s.company_id === validSelection.company_id
+      )
+      Promise.resolve().then(() => {
+        companySelections.forEach((s) => get().prefetchForSelection(s.id))
+      })
+    }
   },
 
   clearData: () => {
@@ -139,6 +150,7 @@ export const createAuthSlice: StateCreator<AppStore, [], [], AuthSlice> = (set, 
       companies: [],
       selections: [],
       templates: [],
+      prefetchCache: new Map(),
       questions: [],
       activeQuestionId: null,
       drafts: [],

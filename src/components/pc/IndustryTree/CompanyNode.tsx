@@ -21,6 +21,7 @@ export function CompanyNode({ company }: CompanyNodeProps) {
   const expandedNodes = useStore((s) => s.expandedNodes)
   const toggleNode = useStore((s) => s.toggleNode)
   const deleteCompany = useStore((s) => s.deleteCompany)
+  const prefetchForSelection = useStore((s) => s.prefetchForSelection)
   const [addOpen, setAddOpen] = useState(false)
 
   const isExpanded = expandedNodes.has(company.id)
@@ -30,7 +31,10 @@ export function CompanyNode({ company }: CompanyNodeProps) {
       <div className="group flex items-center gap-1 px-2 py-1 hover:bg-accent/50 rounded-sm mx-1 cursor-pointer">
         <button
           className="flex items-center gap-1 flex-1 min-w-0"
-          onClick={() => toggleNode(company.id)}
+          onClick={() => {
+            if (!isExpanded) selections.forEach((sel) => prefetchForSelection(sel.id))
+            toggleNode(company.id)
+          }}
         >
           <span className="text-muted-foreground shrink-0">
             {isExpanded ? (
