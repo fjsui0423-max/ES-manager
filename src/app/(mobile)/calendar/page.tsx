@@ -276,7 +276,7 @@ export default function MobileCalendarPage() {
                 selectedItems.map((item) => (
                   <button
                     key={item.id}
-                    onClick={() => setSelectedCompanyId(item.companyId)}
+                    onClick={() => setSelectedMobileCompanyId(item.companyId)}
                     className="w-full flex items-center gap-3 p-3 rounded-lg border border-border hover:border-primary hover:bg-primary/5 active:scale-[0.98] transition-all text-left"
                   >
                     <div className="flex-1 min-w-0">
