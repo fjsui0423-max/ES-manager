@@ -71,7 +71,7 @@ export function RichTextEditor({ charLimit }: RichTextEditorProps) {
       editor.commands.clearContent()
     }
     Promise.resolve().then(() => { isInternalUpdate.current = false })
-  }, [activeQuestionId, activeDraftIndex, contentLoadSignal]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeQuestionId, activeDraftIndex, contentLoadSignal, editor]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Effect B: テンプレート適用時（Tiptap エディタの表示を更新する）
   // 保存は applyTemplate() 内で get().markSaved() により同期的に完了済み
