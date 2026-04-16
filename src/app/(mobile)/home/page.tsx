@@ -1,14 +1,12 @@
 'use client'
 
-import { useState } from 'react'
 import { useStore } from '@/store'
 import { CompanyCard } from '@/components/mobile/CompanyCard'
-import { MobileSelectionSheet } from '@/components/mobile/MobileSelectionSheet'
 
 export default function MobileHomePage() {
   const companies = useStore((s) => s.companies)
   const industries = useStore((s) => s.industries)
-  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null)
+  const setSelectedMobileCompanyId = useStore((s) => s.setSelectedMobileCompanyId)
 
   return (
     <div className="p-4">
@@ -26,7 +24,7 @@ export default function MobileHomePage() {
                 <CompanyCard
                   key={company.id}
                   company={company}
-                  onSelect={setSelectedCompanyId}
+                  onSelect={setSelectedMobileCompanyId}
                 />
               ))}
             </div>
@@ -38,10 +36,6 @@ export default function MobileHomePage() {
           企業が登録されていません
         </p>
       )}
-      <MobileSelectionSheet
-        companyId={selectedCompanyId}
-        onClose={() => setSelectedCompanyId(null)}
-      />
     </div>
   )
 }

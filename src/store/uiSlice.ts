@@ -12,6 +12,7 @@ export interface UISlice {
   isAddSelectionModalOpen: boolean
   addCompanyTargetIndustryId: string | null
   addSelectionTargetCompanyId: string | null
+  selectedMobileCompanyId: string | null
 
   setTreeWidth: (w: number) => void
   setQuestionWidth: (w: number) => void
@@ -24,6 +25,7 @@ export interface UISlice {
   closeAddCompanyModal: () => void
   openAddSelectionModal: (companyId: string) => void
   closeAddSelectionModal: () => void
+  setSelectedMobileCompanyId: (id: string | null) => void
 }
 
 export const createUISlice: StateCreator<UISlice, [], [], UISlice> = (set) => ({
@@ -36,6 +38,7 @@ export const createUISlice: StateCreator<UISlice, [], [], UISlice> = (set) => ({
   isAddSelectionModalOpen: false,
   addCompanyTargetIndustryId: null,
   addSelectionTargetCompanyId: null,
+  selectedMobileCompanyId: null,
 
   setTreeWidth: (w) => set({ treeWidth: w }),
   setQuestionWidth: (w) => set({ questionWidth: w }),
@@ -52,4 +55,5 @@ export const createUISlice: StateCreator<UISlice, [], [], UISlice> = (set) => ({
     set({ isAddSelectionModalOpen: true, addSelectionTargetCompanyId: companyId }),
   closeAddSelectionModal: () =>
     set({ isAddSelectionModalOpen: false, addSelectionTargetCompanyId: null }),
+  setSelectedMobileCompanyId: (id) => set({ selectedMobileCompanyId: id }),
 })

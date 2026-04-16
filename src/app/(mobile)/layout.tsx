@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import { BottomNav } from '@/components/mobile/BottomNav'
+import { MobileSheetPortal } from '@/components/mobile/MobileSheetPortal'
 
 export default function MobileLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -20,6 +21,7 @@ export default function MobileLayout({ children }: { children: React.ReactNode }
         {children}
       </main>
       <BottomNav />
+      <MobileSheetPortal />
     </div>
   )
 }

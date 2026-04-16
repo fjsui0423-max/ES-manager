@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight, CalendarDays, List } from 'lucide-react'
 import { useStore } from '@/store'
-import { MobileSelectionSheet } from '@/components/mobile/MobileSelectionSheet'
 import { cn } from '@/lib/utils'
 import type { Selection } from '@/types/app'
 
@@ -41,7 +40,7 @@ function getDays(year: number, month: number): (Date | null)[] {
 export default function MobileCalendarPage() {
   const selections = useStore((s) => s.selections)
   const companies = useStore((s) => s.companies)
-  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null)
+  const setSelectedMobileCompanyId = useStore((s) => s.setSelectedMobileCompanyId)
 
   const [mode, setMode] = useState<'list' | 'month'>('list')
   const today = new Date()
@@ -164,7 +163,7 @@ export default function MobileCalendarPage() {
                       return (
                         <button
                           key={d.id}
-                          onClick={() => setSelectedCompanyId(d.companyId)}
+                          onClick={() => setSelectedMobileCompanyId(d.companyId)}
                           className={cn(
                             'w-full flex items-start gap-3 p-3 rounded-xl border active:scale-[0.98] transition-all text-left',
                             d.status === 'submitted' ? 'border-border bg-card opacity-50' : urgencyClasses[urgency]
@@ -292,10 +291,6 @@ export default function MobileCalendarPage() {
         </div>
       )}
 
-      <MobileSelectionSheet
-        companyId={selectedCompanyId}
-        onClose={() => setSelectedCompanyId(null)}
-      />
     </div>
   )
 }
