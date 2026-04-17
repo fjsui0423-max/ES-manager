@@ -170,3 +170,15 @@
 .safe-area-pb {
   padding-bottom: env(safe-area-inset-bottom);
 }
+
+/* Landing page scroll-reveal animation */
+.scroll-animate {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.scroll-animate.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}

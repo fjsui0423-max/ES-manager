@@ -39,7 +39,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         tryInit(session.user.id)
       } else {
         clearData()
-        if (pathnameRef.current !== '/login') router.replace('/login')
+        if (pathnameRef.current !== '/login' && pathnameRef.current !== '/') router.replace('/login')
       }
     })
 
@@ -65,7 +65,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }, [])
 
   // ログインページ以外でデータ未読込の場合はローディング表示
-  if (!isAuthReady && pathname !== '/login') {
+  if (!isAuthReady && pathname !== '/login' && pathname !== '/') {
     return (
       <div className="h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
