@@ -9,40 +9,58 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const initializeData = useStore((s) => s.initializeData)
   const clearData = useStore((s) => s.clearData)
   const isAuthReady = useStore((s) => s.isAuthReady)
-  const userId = useStore((s) => s.userId)
   const router = useRouter()
   const pathname = usePathname()
 
-  // ref でクロージャ内から最新の userId を参照できるようにする
-  const userIdRef = useRef(userId)
-  useEffect(() => { userIdRef.current = userId }, [userId])
+  const isAuthReadyRef = useRef(isAuthReady)
+  const pathnameRef    = useRef(pathname)
+  // initializeData の並行実行を防ぐ mutex
+  const initLockRef    = useRef(false)
+
+  useEffect(() => { isAuthReadyRef.current = isAuthReady }, [isAuthReady])
+  useEffect(() => { pathnameRef.current   = pathname },     [pathname])
 
   useEffect(() => {
-    // 初回セッション確認
+    /**
+     * 未初期化かつロック中でない場合のみ initializeData を呼ぶ。
+     * isAuthReady = true の間は何度 onAuthStateChange が発火しても無視される。
+     */
+    const tryInit = (uid: string) => {
+      if (isAuthReadyRef.current || initLockRef.current) return
+      initLockRef.current = true
+      initializeData(uid).finally(() => {
+        initLockRef.current = false
+      })
+    }
+
+    // ① 起動時のセッション確認（一度だけ）
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        initializeData(session.user.id)
+        tryInit(session.user.id)
       } else {
         clearData()
-        if (pathname !== '/login') router.replace('/login')
+        if (pathnameRef.current !== '/login') router.replace('/login')
       }
     })
 
-    // 認証状態の変化を購読
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        // 同一ユーザーのトークンリフレッシュ等では再初期化しない
-        if (session.user.id !== userIdRef.current) {
-          initializeData(session.user.id)
-        }
-        if (pathname === '/login') router.replace('/')
-      } else {
+    // ② 以降の認証状態の変化を購読
+    //    SIGNED_IN / SIGNED_OUT のみ処理し、TOKEN_REFRESHED・INITIAL_SESSION 等は無視する
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        tryInit(session.user.id)
+        if (pathnameRef.current === '/login') router.replace('/')
+      } else if (event === 'SIGNED_OUT') {
         clearData()
         router.replace('/login')
       }
+      // TOKEN_REFRESHED / INITIAL_SESSION / USER_UPDATED 等は意図的に無視
+      // → タブ切替・ウィンドウ切替でも選択状態がリセットされない
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      subscription.unsubscribe()
+      initLockRef.current = false
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
