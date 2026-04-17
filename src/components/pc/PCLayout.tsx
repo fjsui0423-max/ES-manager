@@ -105,59 +105,57 @@ export function PCLayout() {
         </div>
       </div>
 
-      {/* メインコンテンツ */}
-      {pcView === 'editor' ? (
-        <div className="flex flex-1 overflow-hidden p-3 gap-0">
-          {/* 左カラム: 業界ツリー */}
-          <div
-            className="bg-card rounded-2xl shadow-sm border border-border/50 shrink-0 overflow-hidden flex flex-col transition-shadow duration-200 hover:shadow-md"
-            style={{ width: treeWidth }}
-          >
-            <IndustryTree />
-          </div>
-
-          {/* リサイズハンドル 1 */}
-          <div
-            className="w-3 shrink-0 flex items-center justify-center cursor-col-resize group"
-            onMouseDown={startResizeTree}
-          >
-            <div className="w-0.5 h-10 rounded-full bg-transparent group-hover:bg-primary/40 transition-all duration-300 ease-out" />
-          </div>
-
-          {/* 中カラム: 設問リスト */}
-          <div
-            className="bg-card rounded-2xl shadow-sm border border-border/50 shrink-0 overflow-hidden flex flex-col transition-shadow duration-200 hover:shadow-md"
-            style={{ width: questionWidth }}
-          >
-            <QuestionList />
-          </div>
-
-          {/* リサイズハンドル 2 */}
-          <div
-            className="w-3 shrink-0 flex items-center justify-center cursor-col-resize group"
-            onMouseDown={startResizeQuestion}
-          >
-            <div className="w-0.5 h-10 rounded-full bg-transparent group-hover:bg-primary/40 transition-all duration-300 ease-out" />
-          </div>
-
-          {/* 右カラム: 回答エディタ */}
-          <div className="bg-card rounded-2xl shadow-sm border border-border/50 flex-1 overflow-hidden flex flex-col min-w-0 transition-shadow duration-200 hover:shadow-md">
-            <AnswerEditor />
-          </div>
+      {/* メインコンテンツ: 常時マウントして hidden でトグル（アンマウントによる状態リセットを防ぐ） */}
+      <div className={cn("flex flex-1 overflow-hidden p-3 gap-0", pcView !== 'editor' && 'hidden')}>
+        {/* 左カラム: 業界ツリー */}
+        <div
+          className="bg-card rounded-2xl shadow-sm border border-border/50 shrink-0 overflow-hidden flex flex-col transition-shadow duration-200 hover:shadow-md"
+          style={{ width: treeWidth }}
+        >
+          <IndustryTree />
         </div>
-      ) : pcView === 'templates' ? (
-        <div className="flex flex-1 overflow-hidden p-3">
-          <div className="bg-card rounded-2xl shadow-sm border border-border/50 flex-1 overflow-hidden flex flex-col">
-            <TemplateListView />
-          </div>
+
+        {/* リサイズハンドル 1 */}
+        <div
+          className="w-3 shrink-0 flex items-center justify-center cursor-col-resize group"
+          onMouseDown={startResizeTree}
+        >
+          <div className="w-0.5 h-10 rounded-full bg-transparent group-hover:bg-primary/40 transition-all duration-300 ease-out" />
         </div>
-      ) : (
-        <div className="flex flex-1 overflow-hidden p-3">
-          <div className="bg-card rounded-2xl shadow-sm border border-border/50 flex-1 overflow-hidden flex flex-col">
-            <CalendarView />
-          </div>
+
+        {/* 中カラム: 設問リスト */}
+        <div
+          className="bg-card rounded-2xl shadow-sm border border-border/50 shrink-0 overflow-hidden flex flex-col transition-shadow duration-200 hover:shadow-md"
+          style={{ width: questionWidth }}
+        >
+          <QuestionList />
         </div>
-      )}
+
+        {/* リサイズハンドル 2 */}
+        <div
+          className="w-3 shrink-0 flex items-center justify-center cursor-col-resize group"
+          onMouseDown={startResizeQuestion}
+        >
+          <div className="w-0.5 h-10 rounded-full bg-transparent group-hover:bg-primary/40 transition-all duration-300 ease-out" />
+        </div>
+
+        {/* 右カラム: 回答エディタ */}
+        <div className="bg-card rounded-2xl shadow-sm border border-border/50 flex-1 overflow-hidden flex flex-col min-w-0 transition-shadow duration-200 hover:shadow-md">
+          <AnswerEditor />
+        </div>
+      </div>
+
+      <div className={cn("flex flex-1 overflow-hidden p-3", pcView !== 'templates' && 'hidden')}>
+        <div className="bg-card rounded-2xl shadow-sm border border-border/50 flex-1 overflow-hidden flex flex-col">
+          <TemplateListView />
+        </div>
+      </div>
+
+      <div className={cn("flex flex-1 overflow-hidden p-3", pcView !== 'calendar' && 'hidden')}>
+        <div className="bg-card rounded-2xl shadow-sm border border-border/50 flex-1 overflow-hidden flex flex-col">
+          <CalendarView />
+        </div>
+      </div>
     </div>
   )
 }
