@@ -257,7 +257,7 @@ export const createEditorSlice: StateCreator<AppStore, [], [], EditorSlice> = (s
   },
 
   addQuestion: (body, charLimit) => {
-    const { activeSelectionId, questions, userId } = get()
+    const { activeSelectionId, questions, userId, prefetchCache } = get()
     if (!activeSelectionId || !userId) return
     const tmpId = `tmp-${Date.now()}`
     const newQuestion: Question = {
@@ -270,6 +270,9 @@ export const createEditorSlice: StateCreator<AppStore, [], [], EditorSlice> = (s
       created_at: new Date().toISOString(),
     }
     set({ questions: [...questions, newQuestion] })
+    // キャッシュにも楽観的追加
+    const cached = prefetchCache.get(activeSelectionId)
+    if (cached) cached.questions = [...cached.questions, newQuestion]
     ;(async () => {
       const { data, error } = await supabase
         .from('questions')
@@ -278,18 +281,32 @@ export const createEditorSlice: StateCreator<AppStore, [], [], EditorSlice> = (s
         .single()
       if (error) {
         set((s) => ({ questions: s.questions.filter((q) => q.id !== tmpId) }))
+        // 失敗時はキャッシュからも除去
+        const c = get().prefetchCache.get(activeSelectionId)
+        if (c) c.questions = c.questions.filter((q) => q.id !== tmpId)
         return
       }
       set((s) => ({ questions: s.questions.map((q) => (q.id === tmpId ? data : q)) }))
+      // tmpId を DB の実 ID に差し替え
+      const c = get().prefetchCache.get(activeSelectionId)
+      if (c) c.questions = c.questions.map((q) => (q.id === tmpId ? data : q))
     })()
   },
 
   deleteQuestion: (id) => {
-    const { questions, activeQuestionId } = get()
+    const { questions, activeQuestionId, activeSelectionId, prefetchCache } = get()
     set({
       questions: questions.filter((q) => q.id !== id),
       activeQuestionId: activeQuestionId === id ? null : activeQuestionId,
     })
+    // キャッシュからも即時削除（answers エントリも含む）
+    if (activeSelectionId) {
+      const cached = prefetchCache.get(activeSelectionId)
+      if (cached) {
+        cached.questions = cached.questions.filter((q) => q.id !== id)
+        delete cached.answers[id]
+      }
+    }
     ;(async () => {
       await supabase.from('questions').delete().eq('id', id)
     })()
