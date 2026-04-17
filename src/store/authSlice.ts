@@ -6,10 +6,21 @@ import { supabase } from '@/lib/supabase'
 
 const LS_SELECTION = 'es-manager:lastSelectionId'
 const LS_QUESTION  = 'es-manager:lastQuestionId'
+const LS_EXPANDED  = 'es-manager:expandedNodes'
 
 function lsGet(key: string): string | null {
   if (typeof window === 'undefined') return null
   return localStorage.getItem(key)
+}
+
+function lsGetExpanded(): Set<string> {
+  if (typeof window === 'undefined') return new Set()
+  try {
+    const raw = localStorage.getItem(LS_EXPANDED)
+    return raw ? new Set(JSON.parse(raw) as string[]) : new Set()
+  } catch {
+    return new Set()
+  }
 }
 
 export interface AuthSlice {
@@ -98,7 +109,8 @@ export const createAuthSlice: StateCreator<AppStore, [], [], AuthSlice> = (set, 
       }
     }
 
-    const expandedNodes = new Set<string>()
+    // localStorage の展開状態を復元し、アクティブ選考のパスを必ず含める
+    const expandedNodes = lsGetExpanded()
     if (validCompany) {
       expandedNodes.add(validCompany.id)
       expandedNodes.add(validCompany.industry_id)
@@ -142,6 +154,7 @@ export const createAuthSlice: StateCreator<AppStore, [], [], AuthSlice> = (set, 
     if (typeof window !== 'undefined') {
       localStorage.removeItem(LS_SELECTION)
       localStorage.removeItem(LS_QUESTION)
+      localStorage.removeItem(LS_EXPANDED)
     }
     set({
       userId: null,

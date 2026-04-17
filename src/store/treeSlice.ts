@@ -3,6 +3,29 @@ import type { AppStore } from './index'
 import type { Industry, Company, Selection, SelectionStatus } from '@/types/app'
 import { supabase } from '@/lib/supabase'
 
+const LS_SELECTION = 'es-manager:lastSelectionId'
+const LS_EXPANDED  = 'es-manager:expandedNodes'
+
+function lsGet(key: string): string | null {
+  if (typeof window === 'undefined') return null
+  return localStorage.getItem(key)
+}
+
+function lsGetExpanded(): Set<string> {
+  if (typeof window === 'undefined') return new Set()
+  try {
+    const raw = localStorage.getItem(LS_EXPANDED)
+    return raw ? new Set(JSON.parse(raw) as string[]) : new Set()
+  } catch {
+    return new Set()
+  }
+}
+
+export function lsSaveExpanded(nodes: Set<string>): void {
+  if (typeof window === 'undefined') return
+  localStorage.setItem(LS_EXPANDED, JSON.stringify([...nodes]))
+}
+
 export interface TreeSlice {
   industries: Industry[]
   companies: Company[]
@@ -33,13 +56,14 @@ export const createTreeSlice: StateCreator<AppStore, [], [], TreeSlice> = (set, 
 
   activeIndustryId: null,
   activeCompanyId: null,
-  activeSelectionId: null,
+  // localStorage から同期読み込みして初期フラッシュを防ぐ
+  activeSelectionId: lsGet(LS_SELECTION),
 
-  expandedNodes: new Set<string>(),
+  expandedNodes: lsGetExpanded(),
 
   setActiveSelection: (selectionId) => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('es-manager:lastSelectionId', selectionId)
+      localStorage.setItem(LS_SELECTION, selectionId)
       localStorage.removeItem('es-manager:lastQuestionId')
     }
     set((state) => {
@@ -51,6 +75,7 @@ export const createTreeSlice: StateCreator<AppStore, [], [], TreeSlice> = (set, 
         newExpanded.add(company.id)
         newExpanded.add(company.industry_id)
       }
+      lsSaveExpanded(newExpanded)
       return {
         activeSelectionId: selectionId,
         activeCompanyId: selection.company_id,
@@ -68,6 +93,7 @@ export const createTreeSlice: StateCreator<AppStore, [], [], TreeSlice> = (set, 
       } else {
         newExpanded.add(nodeId)
       }
+      lsSaveExpanded(newExpanded)
       return { expandedNodes: newExpanded }
     }),
 
@@ -113,6 +139,7 @@ export const createTreeSlice: StateCreator<AppStore, [], [], TreeSlice> = (set, 
     set((s) => {
       const newExpanded = new Set(s.expandedNodes)
       newExpanded.add(industryId)
+      lsSaveExpanded(newExpanded)
       return { companies: [...s.companies, tmp], expandedNodes: newExpanded }
     })
     ;(async () => {
@@ -148,6 +175,7 @@ export const createTreeSlice: StateCreator<AppStore, [], [], TreeSlice> = (set, 
     set((s) => {
       const newExpanded = new Set(s.expandedNodes)
       newExpanded.add(companyId)
+      lsSaveExpanded(newExpanded)
       return { selections: [...s.selections, tmp], expandedNodes: newExpanded }
     })
     ;(async () => {
